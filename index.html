@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseFit — Painel de Treino, Dieta e Progresso</title>
+  <meta name="description" content="PulseFit: painel pessoal de academia com treino do dia, checklist diário, timer de descanso, dieta, gráfico de peso e notas. Tudo salvo no seu navegador." />
+  <meta name="theme-color" content="#0b0b0d" />
+  <meta name="robots" content="index,follow" />
+  <!-- Quando publicar o site, troque pela URL real: -->
+  <!-- <link rel="canonical" href="https://seusite.com/" /> -->
+
+  <!-- Open Graph (compartilhamento) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="PulseFit — Painel de Treino" />
+  <meta property="og:description" content="Treino, checklist, dieta e progresso em um painel simples e rápido." />
+  <meta property="og:locale" content="pt_BR" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0b0d'/%3E%3Cpath d='M8 34h10l6-16 10 30 7-22 4 8h11' fill='none' stroke='%23c8ff2e' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
+  <!-- Fontes (se não carregarem, o site usa fontes do sistema) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Aplica o tema antes de pintar a página (evita "piscar") -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.classList.add("js");
+      try {
+        var saved = JSON.parse(localStorage.getItem("pulsefit:v2") || "null");
+        root.dataset.theme = (saved && saved.theme) || "dark";
+      } catch (e) {
+        root.dataset.theme = "dark";
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <script src="coach-data.js" defer></script>
+  <script src="coach.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="#inicio" aria-label="PulseFit — início">
+        <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M6 34h11l7-17 11 31 8-23 4 9h11" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>PULSE<b>FIT</b></span>
+      </a>
+
+      <nav class="nav" aria-label="Seções do painel">
+        <a href="#dashboard">Resumo</a>
+        <a href="#checklist">Checklist</a>
+        <a href="#treino">Treino</a>
+        <a href="#plano">Plano</a>
+        <a href="#dieta">Dieta</a>
+        <a href="#progresso">Progresso</a>
+        <a href="#notas">Notas</a>
+      </nav>
+
+      <button class="icon-btn" id="themeToggle" type="button" aria-pressed="true" title="Alternar tema">
+        <span aria-hidden="true">◐</span>
+        <span class="sr-only" id="themeLabel">Mudar para tema claro</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="conteudo" class="app">
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="inicio" aria-labelledby="titulo-hero">
+      <div class="hero__content">
+        <p class="eyebrow">Painel pessoal de treino</p>
+        <h1 id="titulo-hero">PULSE<span>FIT</span></h1>
+        <p class="hero__lead">
+          Treino do dia, checklist, descanso entre séries, dieta e evolução do peso — tudo em um lugar só e salvo no seu navegador.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#treino">Ver treino de hoje</a>
+          <button class="btn btn--ghost js-register" type="button">Registrar treino de hoje</button>
+        </div>
+      </div>
+
+      <aside class="hero__panel" aria-label="Resumo de hoje">
+        <div class="today">
+          <span class="today__label" id="todayLabel">Hoje</span>
+          <strong class="today__workout" id="todayWorkout">—</strong>
+        </div>
+
+        <blockquote class="quote">
+          <p id="heroQuote">A disciplina de hoje constrói a versão de amanhã.</p>
+        </blockquote>
+
+        <div class="mini-grid">
+          <div class="mini">
+            <span>Treinos na semana</span>
+            <strong id="weekWorkouts">0/4</strong>
+          </div>
+          <div class="mini">
+            <span>Meta do mês</span>
+            <strong id="monthProgressText">0%</strong>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section class="section" id="dashboard" aria-labelledby="titulo-dashboard">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Visão geral</p>
+          <h2 id="titulo-dashboard">Resumo</h2>
+        </div>
+        <p class="section__description">Sua semana, seu mês e sua constância em números.</p>
+      </header>
+
+      <div class="stats">
+        <article class="stat">
+          <span class="stat__label">Treinos na semana</span>
+          <strong class="stat__value" id="statWeek">0</strong>
+          <span class="stat__trend" id="trendWeek">Em construção</span>
+        </article>
+        <article class="stat">
+          <span class="stat__label">Meta do mês</span>
+          <strong class="stat__value" id="statMonth">0%</strong>
+          <span class="stat__trend" id="trendMonth">Ganhos iniciais</span>
+        </article>
+        <article class="stat">
+          <span class="stat__label">Checklist de hoje</span>
+          <strong class="stat__value" id="statChecklist">0/5</strong>
+          <span class="stat__trend" id="trendChecklist">Rotina diária</span>
+        </article>
+        <article class="stat">
+          <span class="stat__label">Total de treinos</span>
+          <strong class="stat__value" id="statTotal">0</strong>
+          <span class="stat__trend" id="trendTotal">Comece hoje</span>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel__row">
+          <div>
+            <p class="kicker">Semana atual</p>
+            <h3>Dias treinados</h3>
+          </div>
+          <label class="field field--inline">
+            <span>Meta semanal</span>
+            <select id="weeklyGoal">
+              <option value="1">1 treino</option>
+              <option value="2">2 treinos</option>
+              <option value="3">3 treinos</option>
+              <option value="4" selected>4 treinos</option>
+              <option value="5">5 treinos</option>
+              <option value="6">6 treinos</option>
+              <option value="7">7 treinos</option>
+            </select>
+          </label>
+        </div>
+
+        <ol class="week-strip" id="weekStrip" aria-label="Dias da semana"></ol>
+
+        <div class="progress-head">
+          <span id="monthBarLabel">Progresso do mês</span>
+          <strong id="monthPct">0%</strong>
+        </div>
+        <div class="bar" role="progressbar" aria-labelledby="monthBarLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="monthBarWrap">
+          <div class="bar__fill" id="monthBar"></div>
+        </div>
+        <p class="muted" id="monthHint">A meta do mês é a meta semanal × 4.</p>
+      </article>
+    </section>
+
+    <!-- ================= CHECKLIST ================= -->
+    <section class="section" id="checklist" aria-labelledby="titulo-checklist">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Dia de hoje</p>
+          <h2 id="titulo-checklist">Checklist diário</h2>
+        </div>
+        <p class="section__description">Reinicia sozinho todo dia. Seu progresso fica salvo automaticamente.</p>
+      </header>
+
+      <div class="panel checklist">
+        <label class="check">
+          <input type="checkbox" data-task="aquecimento" />
+          <span class="check__box" aria-hidden="true"></span>
+          <span class="check__text">Aquecimento</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" data-task="treino-principal" />
+          <span class="check__box" aria-hidden="true"></span>
+          <span class="check__text">Treino principal</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" data-task="cardio" />
+          <span class="check__box" aria-hidden="true"></span>
+          <span class="check__text">Cardio</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" data-task="alongamento" />
+          <span class="check__box" aria-hidden="true"></span>
+          <span class="check__text">Alongamento</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" data-task="agua" />
+          <span class="check__box" aria-hidden="true"></span>
+          <span class="check__text">Água</span>
+        </label>
+
+        <div class="checklist__footer">
+          <div>
+            <span class="muted">Progresso diário</span>
+            <strong id="checklistText" aria-live="polite">0/5 concluído</strong>
+          </div>
+          <button class="btn btn--soft" id="resetChecklist" type="button">Limpar checklist</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TREINO ================= -->
+    <section class="section" id="treino" aria-labelledby="titulo-treino">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Treino</p>
+          <h2 id="titulo-treino">Rotina de treino</h2>
+        </div>
+        <p class="section__description">
+          Modelo de exemplo — edite os textos no HTML. Marque cada exercício conforme for fazendo.
+        </p>
+      </header>
+
+      <!-- TIMER DE DESCANSO -->
+      <article class="panel timer" aria-labelledby="titulo-timer">
+        <div>
+          <p class="kicker">Entre as séries</p>
+          <h3 id="titulo-timer">Timer de descanso</h3>
+        </div>
+
+        <div class="timer__display" id="timerDisplay" role="timer" aria-live="off">01:00</div>
+
+        <div class="timer__controls">
+          <div class="presets" role="group" aria-label="Tempo de descanso">
+            <button class="chip-btn" type="button" data-seconds="30" aria-pressed="false">30s</button>
+            <button class="chip-btn" type="button" data-seconds="60" aria-pressed="true">60s</button>
+            <button class="chip-btn" type="button" data-seconds="90" aria-pressed="false">90s</button>
+            <button class="chip-btn" type="button" data-seconds="120" aria-pressed="false">2min</button>
+          </div>
+          <div class="timer__buttons">
+            <button class="btn btn--primary" id="timerToggle" type="button">Iniciar</button>
+            <button class="btn btn--soft" id="timerReset" type="button">Zerar</button>
+          </div>
+        </div>
+      </article>
+
+      <!--
+        ===================== COMO EDITAR O TREINO =====================
+        • Cada <article class="workout-card"> é um dia de treino.
+        • data-day="seg|ter|qua|qui|sex|sab|dom" → o card ganha o selo "HOJE" no dia certo.
+        • Para ADICIONAR um exercício: copie uma linha <li> e troque o texto.
+        • Para ADICIONAR um grupo muscular: copie um bloco <div class="workout-group">.
+        • Para ADICIONAR um dia: copie o <article> inteiro.
+        • O contador "X exercícios" e a barra de progresso são automáticos.
+        ================================================================
+      -->
+      <div class="workout-grid">
+        <!-- ===== DIA 1 (EXEMPLO) ===== -->
+        <article class="workout-card" data-day="seg">
+          <div class="workout-card__top">
+            <span class="tag">Segunda-feira</span>
+            <span class="today-badge" hidden>Hoje</span>
+          </div>
+          <h3>Treino A — Peito e Tríceps</h3>
+          <p>Exemplo de objetivo: força e controle na execução.</p>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Peito</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Supino reto — 4x10</li>
+              <li>Supino inclinado — 3x12</li>
+              <li>Crucifixo — 3x12</li>
+            </ul>
+          </div>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Tríceps</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Tríceps corda — 3x12</li>
+              <li>Tríceps testa — 3x10</li>
+            </ul>
+          </div>
+
+          <div class="card-progress" data-card-progress>
+            <div class="bar bar--thin"><div class="bar__fill"></div></div>
+            <span></span>
+          </div>
+        </article>
+
+        <!-- ===== DIA 2 (EXEMPLO) ===== -->
+        <article class="workout-card" data-day="qua">
+          <div class="workout-card__top">
+            <span class="tag">Quarta-feira</span>
+            <span class="today-badge" hidden>Hoje</span>
+          </div>
+          <h3>Treino B — Costas e Bíceps</h3>
+          <p>Exemplo de objetivo: puxadas fortes e boa postura.</p>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Costas</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Puxada frontal — 4x10</li>
+              <li>Remada curvada — 3x12</li>
+              <li>Remada baixa — 3x12</li>
+            </ul>
+          </div>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Bíceps</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Rosca direta — 3x12</li>
+              <li>Rosca martelo — 3x10</li>
+            </ul>
+          </div>
+
+          <div class="card-progress" data-card-progress>
+            <div class="bar bar--thin"><div class="bar__fill"></div></div>
+            <span></span>
+          </div>
+        </article>
+
+        <!-- ===== DIA 3 (EXEMPLO) ===== -->
+        <article class="workout-card" data-day="sex">
+          <div class="workout-card__top">
+            <span class="tag">Sexta-feira</span>
+            <span class="today-badge" hidden>Hoje</span>
+          </div>
+          <h3>Treino C — Pernas e Ombros</h3>
+          <p>Exemplo de objetivo: base forte e ombros estáveis.</p>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Pernas</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Agachamento — 4x10</li>
+              <li>Leg press — 3x12</li>
+              <li>Cadeira extensora — 3x12</li>
+              <li>Panturrilha em pé — 3x15</li>
+            </ul>
+          </div>
+
+          <div class="workout-group">
+            <div class="workout-group__title"><strong>Ombros</strong><span></span></div>
+            <ul class="ex-list">
+              <li>Desenvolvimento — 3x10</li>
+              <li>Elevação lateral — 3x12</li>
+            </ul>
+          </div>
+
+          <div class="card-progress" data-card-progress>
+            <div class="bar bar--thin"><div class="bar__fill"></div></div>
+            <span></span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= PLANO ================= -->
+    <section class="section" id="plano" aria-labelledby="titulo-plano">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Roteiro</p>
+          <h2 id="titulo-plano">Plano de 1 mês</h2>
+        </div>
+        <p class="section__description">Quatro semanas de exemplo. Troque os textos pelo seu planejamento.</p>
+      </header>
+
+      <div class="timeline">
+        <article class="week">
+          <span class="tag">Semana 1</span>
+          <h3>Base e adaptação</h3>
+          <p>Foco: técnica, mobilidade e consistência.</p>
+          <ul>
+            <li>Exemplo: corpo inteiro</li>
+            <li>Meta: 3 sessões</li>
+            <li>Ritmo: leve e preciso</li>
+          </ul>
+        </article>
+        <article class="week">
+          <span class="tag">Semana 2</span>
+          <h3>Volume controlado</h3>
+          <p>Foco: subir a intensidade sem perder a forma.</p>
+          <ul>
+            <li>Exemplo: superior / inferior</li>
+            <li>Meta: 4 sessões</li>
+            <li>Ritmo: progressão gradual</li>
+          </ul>
+        </article>
+        <article class="week">
+          <span class="tag">Semana 3</span>
+          <h3>Performance</h3>
+          <p>Foco: carga, repetição e recuperação.</p>
+          <ul>
+            <li>Exemplo: grupos musculares</li>
+            <li>Meta: 4 a 5 sessões</li>
+            <li>Ritmo: execução forte</li>
+          </ul>
+        </article>
+        <article class="week">
+          <span class="tag">Semana 4</span>
+          <h3>Revisão e ajuste</h3>
+          <p>Foco: avaliar o progresso e preparar o próximo ciclo.</p>
+          <ul>
+            <li>Exemplo: manutenção estratégica</li>
+            <li>Meta: consolidar hábitos</li>
+            <li>Ritmo: mais consciente</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= DIETA ================= -->
+    <section class="section" id="dieta" aria-labelledby="titulo-dieta">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Nutrição</p>
+          <h2 id="titulo-dieta">Dieta editável</h2>
+        </div>
+        <p class="section__description">Escreva suas refeições, calorias, macros ou ideias de cardápio.</p>
+      </header>
+
+      <div class="diet-grid">
+        <article class="diet-card">
+          <label for="dietBreakfast"><span>☀ Café da manhã</span><small>Salvo automático</small></label>
+          <textarea id="dietBreakfast" placeholder="Exemplo: aveia, fruta, iogurte, café..." rows="5"></textarea>
+        </article>
+        <article class="diet-card">
+          <label for="dietLunch"><span>◍ Almoço</span><small>Salvo automático</small></label>
+          <textarea id="dietLunch" placeholder="Exemplo: arroz, frango, salada, água..." rows="5"></textarea>
+        </article>
+        <article class="diet-card">
+          <label for="dietDinner"><span>☾ Jantar</span><small>Salvo automático</small></label>
+          <textarea id="dietDinner" placeholder="Exemplo: proteína, legumes, carboidrato moderado..." rows="5"></textarea>
+        </article>
+        <article class="diet-card">
+          <label for="dietSnacks"><span>✦ Lanches</span><small>Salvo automático</small></label>
+          <textarea id="dietSnacks" placeholder="Exemplo: frutas, castanhas, shake, iogurte..." rows="5"></textarea>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= MOTIVAÇÃO ================= -->
+    <section class="section" id="motivacao" aria-labelledby="titulo-motivacao">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Mentalidade</p>
+          <h2 id="titulo-motivacao">Motivação</h2>
+        </div>
+        <p class="section__description">Frases curtas para manter o foco. Troque com um toque.</p>
+      </header>
+
+      <div class="panel motivation">
+        <blockquote class="motivation__quote">
+          <p id="motivationQuote" aria-live="polite">Pequenos progressos repetidos todos os dias viram grandes resultados.</p>
+        </blockquote>
+        <div class="motivation__actions">
+          <button class="btn btn--primary" id="nextMotivation" type="button">Outra frase</button>
+          <div class="chips" aria-hidden="true">
+            <span class="chip">Disciplina</span>
+            <span class="chip">Foco</span>
+            <span class="chip">Constância</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROGRESSO ================= -->
+    <section class="section" id="progresso" aria-labelledby="titulo-progresso">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Seguimento</p>
+          <h2 id="titulo-progresso">Progresso corporal</h2>
+        </div>
+        <p class="section__description">Registre peso, altura e idade. O gráfico mostra a evolução do peso.</p>
+      </header>
+
+      <div class="progress-layout">
+        <article class="panel">
+          <h3>Seus dados</h3>
+          <p class="muted">Salve um registro por dia para acompanhar a evolução.</p>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Peso (kg)</span>
+              <input id="weightInput" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="Ex: 76.2" />
+            </label>
+            <label class="field">
+              <span>Altura (m)</span>
+              <input id="heightInput" type="number" inputmode="decimal" step="0.01" min="0.8" max="250" placeholder="Ex: 1.78" />
+            </label>
+            <label class="field">
+              <span>Idade</span>
+              <input id="ageInput" type="number" inputmode="numeric" step="1" min="5" max="120" placeholder="Ex: 18" />
+            </label>
+            <label class="field">
+              <span>Último registro</span>
+              <input id="recordInput" type="text" placeholder="Nenhum ainda" readonly />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn--primary" id="saveBody" type="button">Salvar registro</button>
+          </div>
+
+          <div class="facts">
+            <div class="fact">
+              <span>IMC estimado</span>
+              <strong id="bmiLabel">—</strong>
+            </div>
+            <div class="fact">
+              <span>Variação de peso</span>
+              <strong id="deltaLabel">—</strong>
+            </div>
+          </div>
+          <p class="muted small">O IMC é apenas uma referência e não substitui avaliação profissional.</p>
+        </article>
+
+        <article class="panel">
+          <h3>Evolução do peso</h3>
+          <p class="muted">Passe o mouse ou toque nos pontos para ver os detalhes.</p>
+
+          <div class="chart-wrap" id="chartWrap">
+            <canvas id="chart" role="img" aria-label="Gráfico da evolução do peso"></canvas>
+            <p class="chart-empty" id="chartEmpty">Salve seu primeiro registro para ver o gráfico.</p>
+            <div class="chart-tip" id="chartTip" hidden></div>
+          </div>
+          <p class="sr-only" id="chartSummary" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= NOTAS ================= -->
+    <section class="section" id="notas" aria-labelledby="titulo-notas">
+      <header class="section__header">
+        <div>
+          <p class="kicker">Observações</p>
+          <h2 id="titulo-notas">Notas e lembretes</h2>
+        </div>
+        <p class="section__description">Descanso, ajustes de rotina, metas e observações importantes.</p>
+      </header>
+
+      <article class="panel notes">
+        <label class="sr-only" for="notesField">Suas notas</label>
+        <textarea id="notesField" placeholder="Exemplo: dormir 8h, melhorar a técnica, aumentar a carga na próxima semana..."></textarea>
+        <div class="notes__footer">
+          <span id="notesCounter">0 caracteres</span>
+          <span class="badge">Salvo automaticamente</span>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Seus dados ficam apenas neste navegador. Faça backup de vez em quando.</p>
+    <div class="footer__actions">
+      <button class="btn btn--soft btn--sm" id="exportBtn" type="button">Exportar backup</button>
+      <button class="btn btn--soft btn--sm" id="importBtn" type="button">Importar backup</button>
+      <button class="btn btn--danger btn--sm" id="resetAll" type="button">Apagar todos os dados</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+    </div>
+  </footer>
+
+  <!-- ================= COACH LOCAL ================= -->
+  <button class="coach-launcher" id="coachLauncher" type="button" aria-controls="coachPanel" aria-expanded="false">
+    <span class="coach-launcher__icon" aria-hidden="true">✦</span>
+    <span>Coach</span>
+    <span class="coach-launcher__status">OFFLINE</span>
+  </button>
+
+  <section class="coach-panel" id="coachPanel" role="dialog" aria-modal="false" aria-labelledby="coachTitle" hidden>
+    <header class="coach-header">
+      <div class="coach-header__identity">
+        <span class="coach-avatar" aria-hidden="true">PF</span>
+        <div>
+          <h2 id="coachTitle">PulseFit Coach</h2>
+          <p><span class="coach-online-dot"></span> Assistente local · funciona offline</p>
+        </div>
+      </div>
+      <div class="coach-header__actions">
+        <button class="coach-icon-btn" id="coachClear" type="button" title="Limpar conversa" aria-label="Limpar conversa">⌫</button>
+        <button class="coach-icon-btn" id="coachClose" type="button" title="Fechar Coach" aria-label="Fechar Coach">×</button>
+      </div>
+    </header>
+
+    <div class="coach-disclaimer">Respostas baseadas na biblioteca do PulseFit e nos dados deste navegador. Não é uma IA generativa nem substitui um profissional.</div>
+
+    <div class="coach-messages" id="coachMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+    <div class="coach-quick" id="coachQuickPrompts" aria-label="Sugestões de perguntas">
+      <button type="button" data-prompt="O que treino hoje?">Treino de hoje</button>
+      <button type="button" data-prompt="Como executar o supino reto?">Técnica de exercício</button>
+      <button type="button" data-prompt="Quantos treinos fiz esta semana?">Meu progresso</button>
+      <button type="button" data-prompt="Iniciar descanso de 90 segundos">Timer 90s</button>
+    </div>
+
+    <form class="coach-compose" id="coachForm">
+      <label class="sr-only" for="coachInput">Escreva sua pergunta para o Coach</label>
+      <textarea id="coachInput" rows="1" maxlength="600" placeholder="Pergunte sobre treino, exercícios ou progresso..." required></textarea>
+      <button id="coachSend" type="submit" aria-label="Enviar mensagem">↑</button>
+    </form>
+    <p class="coach-footnote">Enter envia · Shift + Enter quebra a linha · conversa salva neste navegador</p>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
